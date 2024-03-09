@@ -2,7 +2,7 @@
 The CraftShop API provides endpoints for managing products and the corresponding sellers in a craftshop application 
 
 ##DataBase Schema 
-![DataBaseScheme](https://github.com/ainelnazaraly/GoProject.git/dbscheme.png)
+![DataBaseScheme](dbscheme.pngq)
 
 ##DB structure 
 table sellers {  
