@@ -26,4 +26,4 @@ table products {
 }
 
 
-Ref: "sellers"."seller_id" < "products"."seller_id"
+Ref: "sellers"."seller_id" < "products"."seller_id" 
