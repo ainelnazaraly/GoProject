@@ -19,4 +19,3 @@ CREATE TABLE IF NOT EXISTS Products (
     shipping_details TEXT,
     FOREIGN KEY (seller_id) REFERENCES Sellers(seller_id)
 );
-

@@ -54,15 +54,15 @@ func (p ProductModel) Delete(id int) error {
 
 func (p ProductModel) Insert (prod *Product) error {
 	query := `
-		INSERT INTO products (seller_id, name, description, price, category, materials_used, shipping_details) 
-		VALUES ($1, $2, $3, $4, $5, $6, $7) 
+		INSERT INTO products ( name, description, price, category, materials_used, shipping_details) 
+		VALUES ($1, $2, $3, $4, $5, $6) 
 		RETURNING id
 		`
-	args := []interface{}{prod.SellerID, prod.Name, prod.Description, prod.Price, prod.Category, prod.MaterialsUsed, prod.ShippingDetails}
+	args := []interface{}{ prod.Name, prod.Description, prod.Price, prod.Category, prod.MaterialsUsed, prod.ShippingDetails}
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	return  p.DB.QueryRowContext(ctx, query, args...).Scan(&prod.ID, prod.SellerID)
+	return  p.DB.QueryRowContext(ctx, query, args...).Scan(&prod.ID)
 
 }
 

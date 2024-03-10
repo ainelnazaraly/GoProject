@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"net/http"
-	"strconv"
 	"github.com/gorilla/mux"
 	"github.com/ainelnazaraly/CraftShop/pkg/craftshop/model"
 	
@@ -64,92 +63,92 @@ func (app *application) createSellerHandler(w http.ResponseWriter, r *http.Reque
 	app.respondWithJSON(w, http.StatusCreated, seller)
 }
 
-func (app *application) getSellerHandler (w http.ResponseWriter, r* http.Request){ 
-	vars:=mux.Vars(r)
-	param:=vars["sellerId"]
+func (app *application) getSellerHandler(w http.ResponseWriter, r *http.Request) {
+    vars := mux.Vars(r)
+    name := vars["sellerName"]
 
-	id, err:=strconv.Atoi(param)
-	if err!=nil || id <1{ 
-		app.respondWithError(w, http.StatusBadRequest, "Invalid seller ID")
-		return
-	}
+    if name == "" {
+        app.respondWithError(w, http.StatusBadRequest, "Invalid seller name")
+        return
+    }
 
-	seller, err:= app.models.Sellers.Get(id)
-	if err!=nil{ 
-		app.respondWithError(w, http.StatusNotFound, "404 not found")
-		return
-	}
+    seller, err := app.models.Sellers.Get(name)
+    if err != nil {
+        app.respondWithError(w, http.StatusNotFound, "Seller not found")
+        return
+    }
 
-	app.respondWithJSON(w, http.StatusOK, seller)
+    app.respondWithJSON(w, http.StatusOK, seller)
 }
 
-func (app *application) updateSellerHandler(w http.ResponseWriter, r *http.Request){ 
-	vars:=mux.Vars(r)
-	param:=vars["sellerId"]
+func (app *application) updateSellerHandler(w http.ResponseWriter, r *http.Request) {
+    vars := mux.Vars(r)
+    name := vars["sellerName"]
 
-	id, err:=strconv.Atoi(param)
-	if err!=nil || id <1{ 
-		app.respondWithError(w, http.StatusBadRequest, "Invalid seller ID")
-		return
-	}
+    if name == "" {
+        app.respondWithError(w, http.StatusBadRequest, "Invalid seller name")
+        return
+    }
 
-	seller, err:= app.models.Sellers.Get(id)
-	if err!=nil{ 
-		app.respondWithError(w, http.StatusNotFound, "404 not found")
-		return
-	}
-	var input struct { 
-		SellerName	*string 	`json:"seller_name"`
-		Email 		*string 	`json:"email"`
-		Password 	*string 	`json:"password"`
-		Location 	*string 	`json:"location"`
-	}
-	err = app.readJSON(w, r, &input)
+    seller, err := app.models.Sellers.Get(name)
+    if err != nil {
+        app.respondWithError(w, http.StatusNotFound, "Seller not found")
+        return
+    }
 
-	if err != nil {
-		app.respondWithError(w, http.StatusBadRequest, "Invalid request payload")
-		return
-	}
+    var input struct {
+        SellerName *string `json:"seller_name"`
+        Email      *string `json:"email"`
+        Password   *string `json:"password"`
+        Location   *string `json:"location"`
+    }
 
-	if input.SellerName != nil {
-		seller.SellerName = *input.SellerName
-	}
-	
-	if input.Email != nil {
-		seller.Email = *input.Email
-	}
-	
-	if input.Password != nil {
-		seller.Password = *input.Password
-	}
-	
-	if input.Location != nil {
-		seller.Location = *input.Location
-	}
-	err = app.models.Sellers.Update(seller)
-	if err!=nil{ 
-		app.respondWithError(w, http.StatusInternalServerError, "500 Internal Server Error")
-		return
-	}
+    err = app.readJSON(w, r, &input)
+    if err != nil {
+        app.respondWithError(w, http.StatusBadRequest, "Invalid request payload")
+        return
+    }
 
-	app.respondWithJSON(w, http.StatusOK, seller)
+    if input.SellerName != nil {
+        seller.SellerName = *input.SellerName
+    }
+
+    if input.Email != nil {
+        seller.Email = *input.Email
+    }
+
+    if input.Password != nil {
+        seller.Password = *input.Password
+    }
+
+    if input.Location != nil {
+        seller.Location = *input.Location
+    }
+
+    err = app.models.Sellers.Update(seller)
+    if err != nil {
+        app.respondWithError(w, http.StatusInternalServerError, "500 Internal Server Error")
+        return
+    }
+
+    app.respondWithJSON(w, http.StatusOK, seller)
 }
 
-func (app *application) deleteSellerHandler(w http.ResponseWriter, r *http.Request){ 
-	vars:=mux.Vars(r)
-	param:=vars["sellerId"]
 
-	id, err:=strconv.Atoi(param)
-	if err!=nil || id <1{ 
-		app.respondWithError(w, http.StatusBadRequest, "Invalid seller ID")
-		return
-	}
+func (app *application) deleteSellerHandler(w http.ResponseWriter, r *http.Request) {
+    vars := mux.Vars(r)
+    name := vars["sellerName"]
 
-	err =app.models.Sellers.Delete(id)
-	if err != nil {
-		app.respondWithError(w, http.StatusInternalServerError, "500 Internal Server Error")
-		return
-	}
-	
-	app.respondWithJSON(w, http.StatusOK, map[string]string{"result": "success"})
+    if name == "" {
+        app.respondWithError(w, http.StatusBadRequest, "Invalid seller name")
+        return
+    }
+
+    err := app.models.Sellers.Delete(name)
+    if err != nil {
+        app.respondWithError(w, http.StatusInternalServerError, "500 Internal Server Error")
+        return
+    }
+
+    app.respondWithJSON(w, http.StatusOK, map[string]string{"result": "success"})
 }
