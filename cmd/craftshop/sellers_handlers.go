@@ -3,9 +3,10 @@ package main
 import (
 	"encoding/json"
 	"net/http"
-	"github.com/gorilla/mux"
+
 	"github.com/ainelnazaraly/CraftShop/pkg/craftshop/model"
-	
+	"github.com/ainelnazaraly/CraftShop/pkg/craftshop/validator"
+	"github.com/gorilla/mux"
 )
 
 func (app *application) respondWithError(w http.ResponseWriter, code int, message string) {
@@ -151,4 +152,31 @@ func (app *application) deleteSellerHandler(w http.ResponseWriter, r *http.Reque
     }
 
     app.respondWithJSON(w, http.StatusOK, map[string]string{"result": "success"})
+}
+
+func (app *application) getSellersList(w http.ResponseWriter, r *http.Request){ 
+    var input struct { 	
+	    SellerName	string 		
+	    Location 	[]string
+        Page        int 
+        PageSize    int
+        Sort        string
+    }
+
+    v := validator.New()
+
+    qs := r.URL.Query()
+
+    input.SellerName = app.readString(qs, "seller_name", "")
+    input.Location= app.readCSV(qs, "location", []string{})
+
+    input.Page =app.readInt(qs, "page", 1, v)
+    input.PageSize = app.readInt(qs, "page_size", 20, v)
+
+    input.Sort = app.readString(qs, "sort", "id")
+    
+    if !v.Valid(){ 
+        app.fa
+    }
+
 }

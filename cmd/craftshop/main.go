@@ -3,10 +3,12 @@ package main
 import (
 	"database/sql"
 	"flag"
-	"log"
+	"os"
 	"net/http"
 
+
 	"github.com/ainelnazaraly/CraftShop/pkg/craftshop/model"
+	"github.com/ainelnazaraly/CraftShop/pkg/jsonlog"
 	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
 )
@@ -22,6 +24,7 @@ type config struct {
 type application struct {
 	config config
 	models model.Models
+	logger *log.Logger
 }
 
 func main() {
@@ -31,17 +34,23 @@ func main() {
 	flag.StringVar(&cfg.db.dsn, "db-dsn", "postgres://postgres:12345@localhost:5433/craftshop?sslmode=disable", "PostgreSQL DSN")
 	flag.Parse()
 
+	logger := jsonlog.NewLogger(os.Stdout, jsonlog.LevelInfo)
+
 	db, err := openDB(cfg)
 	if err != nil {
-		log.Fatal(err)
+		logger.PrintError(err, nil)
 		return
 	}
-	defer db.Close()
-	db.Ping()
+	defer func() {
+		if err := db.Close(); err != nil {
+			logger.PrintFatal(err, nil)
+		}
+	}()
 
 	app := &application{
 		config: cfg,
 		models: model.NewModel(db),
+		logger: logger
 	}
 
 	app.run()
@@ -75,7 +84,12 @@ v1.HandleFunc("/sellers/{sellerName}", app.deleteSellerHandler).Methods("DELETE"
 }
 
 func openDB(cfg config) (*sql.DB, error) {
+	// Use sql.Open() to create an empty connection pool, using the DSN from the config // struct.
 	db, err := sql.Open("postgres", cfg.db.dsn)
+	if err != nil {
+		return nil, err
+	}
+	err = db.Ping()
 	if err != nil {
 		return nil, err
 	}
