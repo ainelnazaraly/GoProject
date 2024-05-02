@@ -5,17 +5,19 @@ import (
 	"strconv"
 
 	"github.com/ainelnazaraly/CraftShop/pkg/craftshop/model"
+	"github.com/ainelnazaraly/CraftShop/pkg/craftshop/validator"
 	"github.com/gorilla/mux"
 )
 
 func (app *application) createProductHandler(w http.ResponseWriter, r *http.Request) {
 	var input struct {
-		Name            string  `json:"name"`
+		Name            string  `json:"product_name"`
 		Description     string  `json:"description"`
 		Price           float64 `json:"price"`
 		Category        string  `json:"category"`
 		MaterialsUsed   string  `json:"materials_used"`
 		ShippingDetails string  `json:"shipping_details"`
+		SellerID        int     `json:"seller_id"`
 	}
 	err := app.readJSON(w, r, &input)
 	if err != nil {
@@ -30,6 +32,7 @@ func (app *application) createProductHandler(w http.ResponseWriter, r *http.Requ
 		Category:        input.Category,
 		MaterialsUsed:   input.MaterialsUsed,
 		ShippingDetails: input.ShippingDetails,
+		SellerID:        input.SellerID,
 	}
 
 	err = app.models.Products.Insert(product)
@@ -43,7 +46,7 @@ func (app *application) createProductHandler(w http.ResponseWriter, r *http.Requ
 
 func (app *application) getProductHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	param := vars["productId"]
+	param := vars["product_id"]
 
 	id, err := strconv.Atoi(param)
 	if err != nil || id < 1 {
@@ -62,7 +65,7 @@ func (app *application) getProductHandler(w http.ResponseWriter, r *http.Request
 
 func (app *application) updateProductHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	param := vars["productId"]
+	param := vars["product_id"]
 
 	id, err := strconv.Atoi(param)
 	if err != nil || id < 1 {
@@ -77,12 +80,13 @@ func (app *application) updateProductHandler(w http.ResponseWriter, r *http.Requ
 	}
 
 	var input struct {
-		Name            *string  `json:"name"`
+		Name            *string  `json:"product_name"`
 		Description     *string  `json:"description"`
 		Price           *float64 `json:"price"`
 		Category        *string  `json:"category"`
 		MaterialsUsed   *string  `json:"materials_used"`
 		ShippingDetails *string  `json:"shipping_details"`
+		SellerID        *int     `json:"seller_id"`
 	}
 	err = app.readJSON(w, r, &input)
 
@@ -115,6 +119,10 @@ func (app *application) updateProductHandler(w http.ResponseWriter, r *http.Requ
 		product.ShippingDetails = *input.ShippingDetails
 	}
 
+	if input.SellerID != nil {
+		product.SellerID = *input.SellerID
+	}
+
 	err = app.models.Products.Update(product)
 	if err != nil {
 		app.respondWithError(w, http.StatusInternalServerError, "500 Internal Server Error")
@@ -126,7 +134,7 @@ func (app *application) updateProductHandler(w http.ResponseWriter, r *http.Requ
 
 func (app *application) deleteProductHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	param := vars["productId"]
+	param := vars["product_id"]
 
 	id, err := strconv.Atoi(param)
 	if err != nil || id < 1 {
@@ -141,4 +149,36 @@ func (app *application) deleteProductHandler(w http.ResponseWriter, r *http.Requ
 	}
 
 	app.respondWithJSON(w, http.StatusOK, map[string]string{"result": "success"})
+}
+
+func (app *application) listProductsHandler(w http.ResponseWriter, r *http.Request) {
+	var input struct {
+		Category string
+		model.Filters
+	}
+	v := validator.New()
+	qs := r.URL.Query()
+
+	input.Category = app.readString(qs, "category", "")
+	input.Filters.Page = app.readInt(qs, "page", 1, v)
+	input.Filters.PageSize = app.readInt(qs, "page_size", 20, v)
+	input.Filters.Sort = app.readString(qs, "sort", "product_id")
+
+	input.Filters.SortSafeList = []string{"product_id", "price", "category", "-product_id", "-price", "-category"}
+
+	if model.ValidateFilters(v, input.Filters); !v.Valid() {
+		app.failedValidationResponse(w, r, v.Errors)
+		return
+	}
+
+	products, metadata, err := app.models.Products.GetAll(input.Category, input.Filters)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	err = app.writeJSON(w, http.StatusOK, envelope{"products": products, "metadata": metadata}, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
 }

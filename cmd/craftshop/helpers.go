@@ -163,20 +163,17 @@ func (app *application) readJSON(w http.ResponseWriter, r *http.Request, dst int
 
 // readStrings is a helper method on application type that returns a string value from the URL query
 // string, or the provided default value if no matching key is found.
-func (app *application) readStrings(qs url.Values, key string, defaultValue string) string {
+func (app *application) readString(qs url.Values, key string, defaultValue string) string {
 	// Extract the value for a given key from the URL query string.
-	// If no key exists this will return an empty string "".
-	s := qs.Get(key)
-
-	// If no key exists (or the value is empty) then return the default value
-	if s == "" {
-		return defaultValue
-	}
-
-	// Otherwise, return the string
-	return s
+   // If no key exists this will return an empty string "".
+   s := qs.Get(key)
+   // If no key exists (or the value is empty) then return the default value
+   if s == "" {
+	   return defaultValue
+   }
+   // Otherwise, return the string
+   return s
 }
-
 // readInt is a helper method on application type that reads a string value from the URL query
 // string and converts it to an integer before returning. If no matching key is found then it
 // returns the provided default value. If the value couldn't be converted to an integer, then we

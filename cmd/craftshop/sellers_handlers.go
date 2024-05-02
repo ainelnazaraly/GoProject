@@ -3,9 +3,10 @@ package main
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
 
 	"github.com/ainelnazaraly/CraftShop/pkg/craftshop/model"
-	"github.com/ainelnazaraly/CraftShop/pkg/craftshop/validator"
+	// "github.com/ainelnazaraly/CraftShop/pkg/craftshop/validator"
 	"github.com/gorilla/mux"
 )
 
@@ -25,39 +26,27 @@ func (app *application) respondWithJSON(w http.ResponseWriter, code int, payload
 	w.Write(response)
 }
 
-func (app *application) readJSON(w http.ResponseWriter, r *http.Request, dst interface{}) error {
-	dec := json.NewDecoder(r.Body)
-	dec.DisallowUnknownFields()
-
-	err := dec.Decode(dst)
+func (app *application) createSellerHandler(w http.ResponseWriter, r *http.Request) {
+	var input struct {
+		SellerName string `json:"seller_name"`
+		Email      string `json:"email"`
+		Password   string `json:"password"`
+		Location   string `json:"location"`
+	}
+	err := app.readJSON(w, r, &input)
 	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (app *application) createSellerHandler(w http.ResponseWriter, r *http.Request){ 
-	var input struct { 
-		SellerName	string 	`json:"seller_name"`
-		Email 		string 	`json:"email"`
-		Password 	string 	`json:"password"`
-		Location 	string 	`json:"location"`
-	}
-	err:=app.readJSON(w, r, &input)
-	if err!= nil{ 
 		app.respondWithError(w, http.StatusBadRequest, "Invalid request payload")
 		return
 	}
-	seller:=&model.Seller{ 
-		SellerName:  input.SellerName,
-		Email: input.Email,
-		Password: input.Password,
-		Location: input.Location,
+	seller := &model.Seller{
+		SellerName: input.SellerName,
+		Email:      input.Email,
+		Password:   input.Password,
+		Location:   input.Location,
 	}
 
-	err =app.models.Sellers.Insert(seller)
-	if err!=nil{ 
+	err = app.models.Sellers.Insert(seller)
+	if err != nil {
 		app.respondWithError(w, http.StatusInternalServerError, "500 Internal Server error")
 		return
 	}
@@ -65,118 +54,130 @@ func (app *application) createSellerHandler(w http.ResponseWriter, r *http.Reque
 }
 
 func (app *application) getSellerHandler(w http.ResponseWriter, r *http.Request) {
-    vars := mux.Vars(r)
-    name := vars["sellerName"]
+	vars := mux.Vars(r)
+	param := vars["seller_id"]
 
-    if name == "" {
-        app.respondWithError(w, http.StatusBadRequest, "Invalid seller name")
-        return
-    }
+	id, err := strconv.Atoi(param)
+	if err != nil || id < 1 {
+		app.respondWithError(w, http.StatusBadRequest, "Invalid seller ID")
+		return
+	}
 
-    seller, err := app.models.Sellers.Get(name)
-    if err != nil {
-        app.respondWithError(w, http.StatusNotFound, "Seller not found")
-        return
-    }
+	seller, err := app.models.Sellers.Get(id)
+	if err != nil {
+		app.respondWithError(w, http.StatusNotFound, "404 not found")
+		return
+	}
 
-    app.respondWithJSON(w, http.StatusOK, seller)
+	app.respondWithJSON(w, http.StatusOK, seller)
 }
 
 func (app *application) updateSellerHandler(w http.ResponseWriter, r *http.Request) {
-    vars := mux.Vars(r)
-    name := vars["sellerName"]
+	vars := mux.Vars(r)
+	param := vars["seller_id"]
 
-    if name == "" {
-        app.respondWithError(w, http.StatusBadRequest, "Invalid seller name")
-        return
-    }
+	id, err := strconv.Atoi(param)
+	if err != nil || id < 1 {
+		app.respondWithError(w, http.StatusBadRequest, "Invalid seller ID")
+		return
+	}
 
-    seller, err := app.models.Sellers.Get(name)
-    if err != nil {
-        app.respondWithError(w, http.StatusNotFound, "Seller not found")
-        return
-    }
+	seller, err := app.models.Sellers.Get(id)
+	if err != nil {
+		app.respondWithError(w, http.StatusNotFound, "404 not found")
+		return
+	}
 
-    var input struct {
-        SellerName *string `json:"seller_name"`
-        Email      *string `json:"email"`
-        Password   *string `json:"password"`
-        Location   *string `json:"location"`
-    }
+	var input struct {
+		SellerName *string `json:"seller_name"`
+		Email      *string `json:"email"`
+		Password   *string `json:"password"`
+		Location   *string `json:"location"`
+	}
 
-    err = app.readJSON(w, r, &input)
-    if err != nil {
-        app.respondWithError(w, http.StatusBadRequest, "Invalid request payload")
-        return
-    }
+	err = app.readJSON(w, r, &input)
+	if err != nil {
+		app.respondWithError(w, http.StatusBadRequest, "Invalid request payload")
+		return
+	}
 
-    if input.SellerName != nil {
-        seller.SellerName = *input.SellerName
-    }
+	if input.SellerName != nil {
+		seller.SellerName = *input.SellerName
+	}
 
-    if input.Email != nil {
-        seller.Email = *input.Email
-    }
+	if input.Email != nil {
+		seller.Email = *input.Email
+	}
 
-    if input.Password != nil {
-        seller.Password = *input.Password
-    }
+	if input.Password != nil {
+		seller.Password = *input.Password
+	}
 
-    if input.Location != nil {
-        seller.Location = *input.Location
-    }
+	if input.Location != nil {
+		seller.Location = *input.Location
+	}
 
-    err = app.models.Sellers.Update(seller)
-    if err != nil {
-        app.respondWithError(w, http.StatusInternalServerError, "500 Internal Server Error")
-        return
-    }
+	err = app.models.Sellers.Update(seller)
+	if err != nil {
+		app.respondWithError(w, http.StatusInternalServerError, "500 Internal Server Error")
+		return
+	}
 
-    app.respondWithJSON(w, http.StatusOK, seller)
+	app.respondWithJSON(w, http.StatusOK, seller)
 }
-
 
 func (app *application) deleteSellerHandler(w http.ResponseWriter, r *http.Request) {
-    vars := mux.Vars(r)
-    name := vars["sellerName"]
+	vars := mux.Vars(r)
+	param := vars["seller_id"]
 
-    if name == "" {
-        app.respondWithError(w, http.StatusBadRequest, "Invalid seller name")
-        return
-    }
+	id, err := strconv.Atoi(param)
+	if err != nil || id < 1 {
+		app.respondWithError(w, http.StatusBadRequest, "Invalid seller ID")
+		return
+	}
 
-    err := app.models.Sellers.Delete(name)
-    if err != nil {
-        app.respondWithError(w, http.StatusInternalServerError, "500 Internal Server Error")
-        return
-    }
+	err = app.models.Sellers.Delete(id)
+	if err != nil {
+		app.respondWithError(w, http.StatusInternalServerError, "500 Internal Server Error")
+		return
+	}
 
-    app.respondWithJSON(w, http.StatusOK, map[string]string{"result": "success"})
+	app.respondWithJSON(w, http.StatusOK, map[string]string{"result": "success"})
 }
 
-func (app *application) getSellersList(w http.ResponseWriter, r *http.Request){ 
-    var input struct { 	
-	    SellerName	string 		
-	    Location 	[]string
-        Page        int 
-        PageSize    int
-        Sort        string
-    }
+// func (app *application) getSellersList(w http.ResponseWriter, r *http.Request){
+//     var input struct {
+// 	    SellerName	string
+// 	    Location    string
+//         model.Filters
+//     }
 
-    v := validator.New()
+//     v := validator.New()
 
-    qs := r.URL.Query()
+//     qs := r.URL.Query()
 
-    input.SellerName = app.readString(qs, "seller_name", "")
-    input.Location= app.readCSV(qs, "location", []string{})
+//     input.SellerName=app.readStrings(qs, "seller_name", "")
+//     input.Location= app.readStrings(qs, "location", "")
 
-    input.Page =app.readInt(qs, "page", 1, v)
-    input.PageSize = app.readInt(qs, "page_size", 20, v)
+//     input.Filters.Page = app.readInt(qs, "page", 1, v)
+// 	input.Filters.PageSize = app.readInt(qs, "page_size", 20, v)
+// 	input.Filters.Sort = app.readStrings(qs, "sort", "timestamp")
 
-    input.Sort = app.readString(qs, "sort", "id")
-    
-    if !v.Valid(){ 
-        app.fa
-    }
+//     input.Filters.SortSafeList = []string{
+// 		"-timestamp", "timestamp", // sort by timestamp ascending or descending
+// 	}
 
-}
+//     if model.ValidateFilters(v, input.Filters); !v.Valid() {
+// 		app.failedValidationResponse(w, r, v.Errors)
+// 		return
+// 	}
+
+//     sellers, metadata, err := app.models.Sellers.GetAll(input.Location, input.Filters)
+// 	if err != nil {
+// 		app.serverErrorResponse(w, r, err)
+// 		return
+// 	}
+
+// 	// Respond with JSON containing messages and metadata
+// 	app.writeJSON(w, http.StatusOK, envelope{"sellers": sellers, "metadata": metadata}, nil)
+// }
