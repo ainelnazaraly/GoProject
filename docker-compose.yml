@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - 8081:8081
+    depends_on:
+      - db
+    environment:
+      - DB_HOST=locahost
+      - DB_PORT=5433
+      - DB_USER=postgres
+      - DB_PASSWORD=12345
+      - DB_NAME=craftshop
+    
+
+  db:
+    image: postgres:16
+    environment:
+      - POSTGRES_PASSWORD=12345
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  migrate:
+    image: migrate/migrate
+    volumes:
+      - ./pkg/cradtshop/migrations:/migrations
+    command: ["-path", "/migrations", "-database",  "postgres://postgres:12345@localhost:5433/craftshop?sslmode=disable", "up"]
+    depends_on:
+      - db
+
+volumes:
+  pgdata:

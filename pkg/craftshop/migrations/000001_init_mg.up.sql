@@ -18,3 +18,7 @@ CREATE TABLE IF NOT EXISTS Products (
     shipping_details TEXT,
     seller_id bigserial references Sellers(seller_id)
 );
+
+select * from products;
+
+select * from sellers;

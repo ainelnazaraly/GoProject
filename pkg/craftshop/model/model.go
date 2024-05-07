@@ -10,6 +10,9 @@ import (
 type Models struct { 
 	Products 	ProductModel
 	Sellers 	SellerModel
+	Users 		UserModel
+	Tokens 		TokenModel
+	Permissions	PermissionModel
 }
 
 var (
@@ -30,6 +33,21 @@ func NewModel(db *sql.DB) Models {
 			ErrorLog: errorLog,
 		},
 		Sellers: SellerModel{
+			DB:       db,
+			InfoLog:  infoLog,
+			ErrorLog: errorLog,
+		},
+		Users: UserModel{ 
+			DB:       db,
+			InfoLog:  infoLog,
+			ErrorLog: errorLog,
+		},
+		Tokens: TokenModel{
+			DB:       db,
+			InfoLog:  infoLog,
+			ErrorLog: errorLog,
+		},
+		Permissions:PermissionModel { 
 			DB:       db,
 			InfoLog:  infoLog,
 			ErrorLog: errorLog,

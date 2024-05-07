@@ -111,7 +111,7 @@ func (p ProductModel) GetAll(category string, filters Filters) ([]*Product, Meta
 	query := fmt.Sprintf(`
         SELECT count(*) OVER(), product_id, seller_id, product_name, description, price, category, materials_used, shipping_details
         FROM products
-        WHERE category = $1
+        WHERE category = $1 
         ORDER BY %s %s, product_id
         LIMIT $2 OFFSET $3`, filters.sortColumn(), filters.sortDirection())
 

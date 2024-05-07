@@ -3,7 +3,7 @@ package model
 import (
 	"context"
 	"database/sql"
-	"fmt"
+	// "fmt"
 	"log"
 	"time"
 
@@ -80,56 +80,55 @@ func (s SellerModel) Delete(id int) error {
 	return err
 }
 
-func (s SellerModel) GetAll(query string, filters Filters) ([]*Seller, Metadata, error) {
-	// Construct the SQL query for retrieving sellers with the name containing the query string.
-	// We use the ILIKE operator for case-insensitive search.
-	// We also use the OFFSET and LIMIT clauses for pagination.
-	sqlQuery := fmt.Sprintf(`
-        SELECT count(*) OVER(), seller_id, seller_name, email, password, location, date_joined
-        FROM sellers
-        WHERE seller_name ILIKE '%%%s%%'
-        ORDER BY location
-        LIMIT $1 OFFSET $2`, query)
+// func (s SellerModel) GetAll(filters Filters) ([]*Seller, Metadata, error) {
+// 	// Construct the SQL query for retrieving sellers with the location specified in filters.
+// 	sqlQuery := fmt.Sprintf(`
+//         SELECT count(*) OVER(), seller_id, seller_name, email, password, location, date_joined
+//         FROM sellers
+//         WHERE location=$1
+//         ORDER BY date_joined
+//         LIMIT $2 OFFSET $3`)
 
-	// Create a context with a timeout.
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-	defer cancel()
+// 	// Create a context with a timeout.
+// 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+// 	defer cancel()
 
-	// Execute the query and retrieve the result set.
-	rows, err := s.DB.QueryContext(ctx, sqlQuery, filters.PageSize, filters.Page)
-	if err != nil {
-		return nil, Metadata{}, err
-	}
-	defer func() {
-		if err := rows.Close(); err != nil {
-			s.ErrorLog.Println(err)
-		}
-	}()
+// 	// Execute the query and retrieve the result set.
+// 	rows, err := s.DB.QueryContext(ctx, sqlQuery, filters.PageSize, filters.PageSize)
+// 	if err != nil {
+// 		return nil, Metadata{}, err
+// 	}
+// 	defer func() {
+// 		if err := rows.Close(); err != nil {
+// 			s.ErrorLog.Println(err)
+// 		}
+// 	}()
 
-	// Declare variables to store total records and sellers.
-	var totalRecords int
-	var sellers []*Seller
+// 	// Declare variables to store total records and sellers.
+// 	var totalRecords int
+// 	var sellers []*Seller
 
-	// Iterate over the result set and scan each row into a Seller struct.
-	for rows.Next() {
-		var seller Seller
-		if err := rows.Scan(&totalRecords, &seller.SellerID, &seller.SellerName, &seller.Email, &seller.Password, &seller.Location, &seller.DateJoined); err != nil {
-			return nil, Metadata{}, err
-		}
-		sellers = append(sellers, &seller)
-	}
+// 	// Iterate over the result set and scan each row into a Seller struct.
+// 	for rows.Next() {
+// 		var seller Seller
+// 		if err := rows.Scan(&totalRecords, &seller.SellerID, &seller.SellerName, &seller.Email, &seller.Password, &seller.Location, &seller.DateJoined); err != nil {
+// 			return nil, Metadata{}, err
+// 		}
+// 		sellers = append(sellers, &seller)
+// 	}
 
-	// Check for errors during iteration.
-	if err = rows.Err(); err != nil {
-		return nil, Metadata{}, err
-	}
+// 	// Check for errors during iteration.
+// 	if err = rows.Err(); err != nil {
+// 		return nil, Metadata{}, err
+// 	}
 
-	// Generate metadata based on total records and pagination parameters.
-	metadata := calculateMetadata(totalRecords, filters.Page, filters.PageSize)
+// 	// Generate metadata based on total records and pagination parameters.
+// 	metadata := calculateMetadata(totalRecords, filters.Page, filters.PageSize)
 
-	// Return the sellers and metadata.
-	return sellers, metadata, nil
-}
+// 	// Return the sellers and metadata.
+// 	return sellers, metadata, nil
+// }
+
 
 func ValidateSeller(v *validator.Validator, seller *Seller) {
 	// Check if the seller name field is empty.
