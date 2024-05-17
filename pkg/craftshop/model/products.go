@@ -154,3 +154,36 @@ func (p ProductModel) GetAll(category string, filters Filters) ([]*Product, Meta
 	metadata := calculateMetadata(totalRecords, filters.Page, filters.PageSize)
 	return products, metadata, nil
 }
+
+func (p *ProductModel) GetBySellerID(sellerID int) ([]*Product, error) {
+    // Query to retrieve products by seller ID
+    query := `
+        SELECT product_id, product_name, description, price, category, materials_used, shipping_details
+        FROM products
+        WHERE seller_id = $1`
+
+    // Execute query
+    rows, err := p.DB.Query(query, sellerID)
+    if err != nil {
+        return nil, err
+    }
+    defer rows.Close()
+
+    // Iterate over results and scan into product structs
+    var products []*Product
+    for rows.Next() {
+        var product Product
+        if err := rows.Scan(&product.ID, &product.Name, &product.Description, &product.Price, &product.Category, &product.MaterialsUsed, &product.ShippingDetails); err != nil {
+            return nil, err
+        }
+        products = append(products, &product)
+    }
+
+    // Check for errors during iteration
+    if err := rows.Err(); err != nil {
+        return nil, err
+    }
+
+    return products, nil
+}
+

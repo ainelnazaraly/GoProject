@@ -32,16 +32,18 @@ func (app *application) routes() http.Handler {
 	v1.HandleFunc("/products/{product_id:[0-9]+}", app.requirePermissions("products:write", app.deleteProductHandler)).Methods("DELETE")
 
 	// Create a new seller
-	v1.HandleFunc("/sellers", app.requirePermissions("sellers:write", app.createSellerHandler)).Methods("POST")
+	v1.HandleFunc("/sellers", app.createSellerHandler).Methods("POST")
 	// Retrieve a seller by sellerName
-	v1.HandleFunc("/sellers/{seller_id:[0-9]+}", app.requirePermissions("sellers:read", app.getSellerHandler)).Methods("GET")
+	v1.HandleFunc("/sellers/{seller_id:[0-9]+}",  app.getSellerHandler).Methods("GET")
 	// Update a seller's information by sellerName
-	v1.HandleFunc("/sellers/{seller_id:[0-9]+}", app.requirePermissions("sellers:write", app.updateSellerHandler)).Methods("PUT")
+	v1.HandleFunc("/sellers/{seller_id:[0-9]+}",  app.updateSellerHandler).Methods("PUT")
 	// Delete a seller by sellerName
 	v1.HandleFunc("/sellers/{seller_id:[0-9]+}", app.requirePermissions("sellers:write", app.deleteSellerHandler)).Methods("DELETE")
 
 	// Retrieve a list of sellers
 	v1.HandleFunc("/products", app.requireActivatedUser(app.listProductsHandler)).Methods("GET")
+	v1.HandleFunc("/sellers", app.requireActivatedUser(app.listSellersHandler)).Methods("GET")
+	v1.HandleFunc("/products/seller/{seller_id:[0-9]+}", app.listProductsBySellerHandler).Methods("GET")
 
 	v1.HandleFunc("/users", app.registerUserHandler).Methods("POST")
 	v1.HandleFunc("/users/activated", app.activateUserHandler).Methods("PUT")

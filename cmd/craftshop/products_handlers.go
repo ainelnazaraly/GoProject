@@ -182,3 +182,29 @@ func (app *application) listProductsHandler(w http.ResponseWriter, r *http.Reque
 		app.serverErrorResponse(w, r, err)
 	}
 }
+
+func (app *application) listProductsBySellerHandler(w http.ResponseWriter, r *http.Request) {
+	// Extract seller ID from URL path parameter
+	vars := mux.Vars(r)
+	sellerIDStr := vars["seller_id"]
+
+	// Parse seller ID as integer
+	sellerID, err := strconv.Atoi(sellerIDStr)
+	if err != nil {
+		http.Error(w, "Invalid seller ID", http.StatusBadRequest)
+		return
+	}
+
+	// Retrieve products by seller ID
+	products, err := app.models.Products.GetBySellerID(sellerID)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	// Write products to response
+	err = app.writeJSON(w, http.StatusOK, envelope{"products": products}, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
+}

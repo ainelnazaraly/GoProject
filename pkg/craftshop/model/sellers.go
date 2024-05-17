@@ -3,6 +3,8 @@ package model
 import (
 	"context"
 	"database/sql"
+	"fmt"
+
 	// "fmt"
 	"log"
 	"time"
@@ -80,54 +82,52 @@ func (s SellerModel) Delete(id int) error {
 	return err
 }
 
-// func (s SellerModel) GetAll(filters Filters) ([]*Seller, Metadata, error) {
-// 	// Construct the SQL query for retrieving sellers with the location specified in filters.
-// 	sqlQuery := fmt.Sprintf(`
-//         SELECT count(*) OVER(), seller_id, seller_name, email, password, location, date_joined
-//         FROM sellers
-//         WHERE location=$1
-//         ORDER BY date_joined
-//         LIMIT $2 OFFSET $3`)
+func (s SellerModel) GetAll(location string, filters Filters) ([]*Seller, Metadata, error) {
+    query := fmt.Sprintf(`
+        SELECT count(*) OVER(), seller_id, seller_name, email, password, location, date_joined
+        FROM sellers
+        WHERE location = $1
+        ORDER BY %s %s, seller_id
+        LIMIT $2 OFFSET $3`, filters.sortColumn(), filters.sortDirection())
 
-// 	// Create a context with a timeout.
-// 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-// 	defer cancel()
+    ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+    defer cancel()
 
-// 	// Execute the query and retrieve the result set.
-// 	rows, err := s.DB.QueryContext(ctx, sqlQuery, filters.PageSize, filters.PageSize)
-// 	if err != nil {
-// 		return nil, Metadata{}, err
-// 	}
-// 	defer func() {
-// 		if err := rows.Close(); err != nil {
-// 			s.ErrorLog.Println(err)
-// 		}
-// 	}()
+    args := []interface{}{location, filters.limit(), filters.offset()}
 
-// 	// Declare variables to store total records and sellers.
-// 	var totalRecords int
-// 	var sellers []*Seller
+    rows, err := s.DB.QueryContext(ctx, query, args...)
+    if err != nil {
+        return nil, Metadata{}, err
+    }
+    defer rows.Close()
 
-// 	// Iterate over the result set and scan each row into a Seller struct.
-// 	for rows.Next() {
-// 		var seller Seller
-// 		if err := rows.Scan(&totalRecords, &seller.SellerID, &seller.SellerName, &seller.Email, &seller.Password, &seller.Location, &seller.DateJoined); err != nil {
-// 			return nil, Metadata{}, err
-// 		}
-// 		sellers = append(sellers, &seller)
-// 	}
+    totalRecords := 0
+    sellers := []*Seller{}
 
-// 	// Check for errors during iteration.
-// 	if err = rows.Err(); err != nil {
-// 		return nil, Metadata{}, err
-// 	}
+    for rows.Next() {
+        var seller Seller
+        err := rows.Scan(
+            &totalRecords,
+            &seller.SellerID,
+            &seller.SellerName,
+            &seller.Email,
+            &seller.Password,
+            &seller.Location,
+            &seller.DateJoined,
+        )
+        if err != nil {
+            return nil, Metadata{}, err
+        }
+        sellers = append(sellers, &seller)
+    }
+    if err = rows.Err(); err != nil {
+        return nil, Metadata{}, err
+    }
 
-// 	// Generate metadata based on total records and pagination parameters.
-// 	metadata := calculateMetadata(totalRecords, filters.Page, filters.PageSize)
+    metadata := calculateMetadata(totalRecords, filters.Page, filters.PageSize)
+    return sellers, metadata, nil
+}
 
-// 	// Return the sellers and metadata.
-// 	return sellers, metadata, nil
-// }
 
 
 func ValidateSeller(v *validator.Validator, seller *Seller) {

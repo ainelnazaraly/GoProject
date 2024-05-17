@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/ainelnazaraly/CraftShop/pkg/craftshop/model"
+	"github.com/ainelnazaraly/CraftShop/pkg/craftshop/validator"
 	// "github.com/ainelnazaraly/CraftShop/pkg/craftshop/validator"
 	"github.com/gorilla/mux"
 )
@@ -145,39 +146,34 @@ func (app *application) deleteSellerHandler(w http.ResponseWriter, r *http.Reque
 	app.respondWithJSON(w, http.StatusOK, map[string]string{"result": "success"})
 }
 
-// func (app *application) getSellersList(w http.ResponseWriter, r *http.Request) {
-// 	var input struct {
-// 		SellerName string
-// 		Location   string
-// 		model.Filters
-// 	}
+func (app *application) listSellersHandler(w http.ResponseWriter, r *http.Request) {
+    var input struct {
+        Location string
+        model.Filters
+    }
+    v := validator.New()
+    qs := r.URL.Query()
 
-// 	v := validator.New()
+    input.Location = app.readString(qs, "location", "")
+    input.Filters.Page = app.readInt(qs, "page", 1, v)
+    input.Filters.PageSize = app.readInt(qs, "page_size", 20, v)
+    input.Filters.Sort = app.readString(qs, "sort", "seller_id")
 
-// 	qs := r.URL.Query()
+    input.Filters.SortSafeList = []string{"seller_id", "seller_name", "location", "-seller_id", "-seller_name", "-location"}
 
-// 	input.SellerName = app.readString(qs, "seller_name", "")
-// 	input.Location = app.readString(qs, "location", "")
+    if model.ValidateFilters(v, input.Filters); !v.Valid() {
+        app.failedValidationResponse(w, r, v.Errors)
+        return
+    }
 
-// 	input.Filters.Page = app.readInt(qs, "page", 1, v)
-// 	input.Filters.PageSize = app.readInt(qs, "page_size", 20, v)
-// 	input.Filters.Sort = app.readString(qs, "sort", "date_joined")
+    sellers, metadata, err := app.models.Sellers.GetAll(input.Location, input.Filters)
+    if err != nil {
+        app.serverErrorResponse(w, r, err)
+        return
+    }
 
-// 	input.Filters.SortSafeList = []string{
-// 		"-date_joined", "date_joined", // sort by date_joined ascending or descending
-// 	}
-
-// 	if model.ValidateFilters(v, input.Filters); !v.Valid() {
-// 		app.failedValidationResponse(w, r, v.Errors)
-// 		return
-// 	}
-
-// 	sellers, metadata, err := app.models.Sellers.GetAll(input.Filters)
-// 	if err != nil {
-// 		app.serverErrorResponse(w, r, err)
-// 		return
-// 	}
-
-// 	// Respond with JSON containing sellers and metadata
-// 	app.writeJSON(w, http.StatusOK, envelope{"sellers": sellers, "metadata": metadata}, nil)
-// }
+    err = app.writeJSON(w, http.StatusOK, envelope{"sellers": sellers, "metadata": metadata}, nil)
+    if err != nil {
+        app.serverErrorResponse(w, r, err)
+    }
+}
