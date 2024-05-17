@@ -38,7 +38,7 @@ func main() {
 	flag.BoolVar(&cfg.fill, "fill", false, "Fill db with dummy data")
 	flag.StringVar(&cfg.port, "port", ":8081", "API server port")
 	flag.StringVar(&cfg.env, "env", "development", "Environment (development|staging|production)")
-	flag.StringVar(&cfg.db.dsn, "db-dsn", "postgres://postgres:12345@localhost:5433/craftshop?sslmode=disable", "PostgreSQL DSN")
+	flag.StringVar(&cfg.db.dsn, "db-dsn", "postgres://craftshop_db_user:UunvdXaI7LlHkcmN1Ka2D9jp8wBbWeUo@dpg-cp3gipg21fec73b70lpg-a.singapore-postgres.render.com/craftshop_db", "PostgreSQL DSN")
 	flag.Parse()
 
 	//Init logger
